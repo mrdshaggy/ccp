@@ -3,6 +3,8 @@ import Logo from './components/Logo';
 import AddShopModal from './components/AddShopModal';
 import SearchBar from './components/SearchBar';
 import ResultsGrid from './components/ResultsGrid';
+import ProductCompareModal from './components/ProductCompareModal';
+import CartDrawer from './components/CartDrawer';
 import { CHAINS, searchProducts } from './services/api';
 import './App.css';
 
@@ -13,6 +15,9 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [results, setResults] = useState({});
   const [currentQuery, setCurrentQuery] = useState('');
+  const [compareModal, setCompareModal] = useState(null);
+  const [cart, setCart] = useState({});
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   const addShop = useCallback((chainKey, store) => {
     const id = `shop-${++shopCounter}`;
@@ -60,6 +65,35 @@ export default function App() {
     runSearch(query, selectedShops);
   }, [selectedShops, runSearch]);
 
+  const openCompareModal = useCallback((product, shopEntry) => {
+    setCompareModal({ product, shopEntry });
+  }, []);
+
+  const addToCart = useCallback((shopEntry, product) => {
+    setCart(prev => {
+      const key = shopEntry.id;
+      const existing = prev[key] || { shop: shopEntry.store, chainKey: shopEntry.chainKey, items: [] };
+      if (existing.items.some(i => i.ean === product.ean)) return prev;
+      return { ...prev, [key]: { ...existing, items: [...existing.items, product] } };
+    });
+  }, []);
+
+  const removeFromCart = useCallback((shopId, productEan) => {
+    setCart(prev => {
+      const entry = prev[shopId];
+      if (!entry) return prev;
+      const items = entry.items.filter(i => i.ean !== productEan);
+      if (items.length === 0) {
+        const next = { ...prev };
+        delete next[shopId];
+        return next;
+      }
+      return { ...prev, [shopId]: { ...entry, items } };
+    });
+  }, []);
+
+  const totalCartItems = Object.values(cart).reduce((sum, s) => sum + s.items.length, 0);
+
   return (
     <div className="app">
       <header className="app-header">
@@ -71,6 +105,10 @@ export default function App() {
               <span className="logo-sub">Знайди дешевше поруч</span>
             </div>
           </div>
+          <button className="cart-icon-btn" onClick={() => setIsCartOpen(true)} aria-label="Кошик">
+            🛒
+            {totalCartItems > 0 && <span className="cart-icon-badge">{totalCartItems}</span>}
+          </button>
         </div>
       </header>
 
@@ -115,11 +153,12 @@ export default function App() {
         {Object.keys(results).length > 0 && currentQuery && (
           <div className="results-label">
             Результати для <strong>"{currentQuery}"</strong>
+            <span className="results-hint"> — натисніть на товар, щоб порівняти</span>
           </div>
         )}
 
         {Object.keys(results).length > 0 && (
-          <ResultsGrid shops={selectedShops} results={results} />
+          <ResultsGrid shops={selectedShops} results={results} onCardClick={openCompareModal} />
         )}
 
         {selectedShops.length === 0 && (
@@ -141,6 +180,24 @@ export default function App() {
 
       {isModalOpen && (
         <AddShopModal onAdd={addShop} onClose={() => setIsModalOpen(false)} />
+      )}
+
+      {compareModal && (
+        <ProductCompareModal
+          sourceProduct={compareModal.product}
+          sourceShopId={compareModal.shopEntry.id}
+          selectedShops={selectedShops}
+          onAddToCart={addToCart}
+          onClose={() => setCompareModal(null)}
+        />
+      )}
+
+      {isCartOpen && (
+        <CartDrawer
+          cart={cart}
+          onRemoveItem={removeFromCart}
+          onClose={() => setIsCartOpen(false)}
+        />
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-export default function ProductCard({ product, color }) {
+export default function ProductCard({ product, color, onClick, isCheapest }) {
   const price = Number(product.price).toFixed(2);
   const oldPrice = product.oldPrice && Number(product.oldPrice) > Number(product.price)
     ? Number(product.oldPrice).toFixed(2)
@@ -6,7 +6,11 @@ export default function ProductCard({ product, color }) {
   const img = product.img || product.img_path || product.image;
 
   return (
-    <div className="product-card">
+    <div
+      className={`product-card${onClick ? ' product-card--clickable' : ''}${isCheapest ? ' product-card--cheapest' : ''}`}
+      onClick={onClick}
+    >
+      {isCheapest && <div className="product-cheapest-badge">Дешевше</div>}
       <div className="product-img-wrap">
         {img ? (
           <img

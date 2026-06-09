@@ -1,7 +1,7 @@
 import ProductCard from './ProductCard';
 import { CHAINS } from '../services/api';
 
-export default function ShopColumn({ shop, result }) {
+export default function ShopColumn({ shop, result, onCardClick }) {
   const chain = CHAINS[shop.chainKey];
   const { loading, products, error } = result;
 
@@ -34,7 +34,12 @@ export default function ShopColumn({ shop, result }) {
         )}
 
         {!loading && !error && products.map((p, i) => (
-          <ProductCard key={p.ean || i} product={p} color={chain.color} />
+          <ProductCard
+            key={p.ean || i}
+            product={p}
+            color={chain.color}
+            onClick={onCardClick ? () => onCardClick(p, shop) : undefined}
+          />
         ))}
       </div>
     </div>
