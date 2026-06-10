@@ -241,6 +241,34 @@ async function getAtbStores() {
   });
 }
 
+async function searchAtbProducts(query) {
+  const params = new URLSearchParams({
+    id: '11280',
+    key: '63a6d0a760fd2d0562c4061b78e64754',
+    lang: 'uk',
+    m: String(Date.now()),
+    q: 'nd',
+    query,
+    s: 'medium',
+    uid: 'neardeal-0000-0000-0000-000000000001',
+  });
+  const res = await fetch(`https://api.multisearch.io/?${params}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+
+  return (data.results?.item_groups ?? [])
+    .flatMap((g) => g.items ?? [])
+    .filter((item) => item.is_presence !== false)
+    .map((item) => ({
+      ean: item.id,
+      title: item.name,
+      weight: null,
+      img: item.picture ?? null,
+      price: item.price,
+      oldPrice: item.oldprice ?? null,
+    }));
+}
+
 // ── Public API ───────────────────────────────────────────────
 
 export async function getStores(hub) {
@@ -254,5 +282,6 @@ export async function getStores(hub) {
 export async function searchProducts(store, query, chainKey) {
   if (chainKey === 'silpo') return searchSilpoProducts(store.id, store.externalId, query);
   if (chainKey === 'metro') return searchMetroProducts(store.id, query);
+  if (chainKey === 'atb') return searchAtbProducts(query);
   return mockSearchProducts(store.id, chainKey, query);
 }
