@@ -40,7 +40,7 @@ vite.config.js                     # 4 proxies: /silpo-api, /silpo-branches, /me
 |-------|--------|----------|-------|
 | **Сільпо** | Live — `sf-ecom-api.silpo.ua` | Live — same API | Multi-word fallback: if phrase returns 0, searches each word separately and intersects by UUID. Parallel image fetch from old catalog API. |
 | **METRO** | Live — `www.metro.ua/sxa/search/results` (26 stores) | Live — 2-step: search → betty-variants | `x-sd-token: mq6k5cu8` static header. Store locator parses HTML: radio `value` attribute = storeId (zero-padded to 5 digits). Coordinates from `Geospatial` field. |
-| **АТБ** | Mocked (13 Kyiv/Харків/Одеса/Дніпро stores) | Mocked | No public API found. |
+| **АТБ** | Live — OpenStreetMap Overpass API (~1234 stores, Ukraine bbox 44,22,52.5,40.5) | Mocked | `brand:wikidata=Q4054103`. No product API found; prices remain mocked. |
 
 ---
 
@@ -48,7 +48,7 @@ vite.config.js                     # 4 proxies: /silpo-api, /silpo-branches, /me
 
 | File | Role |
 |------|------|
-| `vite.config.js` | 4 dev proxies: `/silpo-api` → `api.catalog.ecom.silpo.ua`, `/silpo-branches` → `sf-ecom-api.silpo.ua`, `/metro-api` → `shop.metro.ua`, `/metro-www` → `www.metro.ua` |
+| `vite.config.js` | 5 dev proxies: `/silpo-api` → `api.catalog.ecom.silpo.ua`, `/silpo-branches` → `sf-ecom-api.silpo.ua`, `/metro-api` → `shop.metro.ua`, `/metro-www` → `www.metro.ua`, `/overpass-api` → `overpass-api.de` |
 | `src/services/api.js` | All fetch logic. `getStores(hub)` and `searchProducts(store, query, chainKey)` are the public exports. Metro: live store locator + 2-step search (articlesearch → betty-variants). Silpo: dual-API (new ecom + old catalog for images), multi-word intersection fallback. |
 | `src/App.jsx` | State: `selectedShops[]`, `results{}`, `currentQuery`, `compareModal`, `cart{}`, `isCartOpen`. `addToCart(shopEntry, product)` deduplicates by EAN. `removeFromCart(shopId, ean)` auto-removes empty shop buckets. Cart icon in header shows badge count. |
 | `src/App.css` | Fixed-height viewport layout: `height: 100dvh; overflow: hidden` on `.app`. Flex column chain: `.app-main` → `.results-grid` (flex:1) → `.shop-column` → `.column-body` (overflow-y: auto). Per-column independent scroll. Print CSS: `body * { visibility: hidden }` + cart-drawer override for clean print/PDF output. |
@@ -66,7 +66,8 @@ vite.config.js                     # 4 proxies: /silpo-api, /silpo-branches, /me
 
 ## Known limitations / pending tasks
 
-- **ATB** has no real API — needs reverse-engineering if real data is wanted
+- **ATB stores** are real (1234 stores from OpenStreetMap), but **ATB products are still mocked** — no public product API found
+- **ATB Overpass query is slow** (~3-8s) because it fetches all 1234 stores at once; could be optimised with a geolocation-bounded request
 - **METRO returns max 24 results** per search (page 1 only); pagination not implemented
 - **Silpo images** are fetched from the old catalog API in parallel — if that endpoint goes down, images fall back to the cart emoji placeholder
 - **No persistence** — selected shops, search state, and cart are lost on page refresh

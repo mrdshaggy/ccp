@@ -205,11 +205,47 @@ async function searchMetroProducts(storeId, query) {
   });
 }
 
+// ── АТБ (OpenStreetMap / Overpass) ────────────────────────────
+
+const ATB_OVERPASS_QUERY =
+  '[out:json][timeout:60];' +
+  '(node["brand:wikidata"="Q4054103"](44,22,52.5,40.5);' +
+  'way["brand:wikidata"="Q4054103"](44,22,52.5,40.5););' +
+  'out center;';
+
+async function getAtbStores() {
+  const res = await fetch(
+    `/overpass-api/api/interpreter?data=${encodeURIComponent(ATB_OVERPASS_QUERY)}`,
+    { headers: { Accept: 'application/json' } }
+  );
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+
+  return (data.elements ?? []).flatMap((el) => {
+    const lat = el.lat ?? el.center?.lat ?? 0;
+    const lon = el.lon ?? el.center?.lon ?? 0;
+    if (!lat || !lon) return [];
+    const t = el.tags ?? {};
+    const city = t['addr:city'] ?? '';
+    const street = t['addr:street'] ?? '';
+    const num = t['addr:housenumber'] ?? '';
+    const addressLine = [street, num].filter(Boolean).join(' ');
+    const titleExtra = [city, street].filter(Boolean).join(', ');
+    return [{
+      id: `osm-${el.id}`,
+      title: titleExtra ? `АТБ-Маркет ${titleExtra}` : 'АТБ-Маркет',
+      address: [addressLine, city].filter(Boolean).join(', '),
+      coordinates: { latitude: lat, longitude: lon },
+    }];
+  });
+}
+
 // ── Public API ───────────────────────────────────────────────
 
 export async function getStores(hub) {
   if (hub === 'silpo') return getSilpoStores();
   if (hub === 'metro') return getMetroStores();
+  if (hub === 'atbmarket') return getAtbStores();
   const chainKey = Object.keys(CHAINS).find((k) => CHAINS[k].hub === hub);
   return mockGetStores(chainKey);
 }

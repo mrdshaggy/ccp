@@ -113,7 +113,7 @@ export default function App() {
       </header>
 
       <div className="demo-banner">
-        ⚠ Демо-режим — АТБ не має публічного API, його дані демонстраційні. Сільпо та METRO — реальні API.
+        ⚠ Демо-режим — магазини АТБ реальні (OpenStreetMap), але ціни демонстраційні. Сільпо та METRO — реальні API.
       </div>
 
       <main className="app-main">
