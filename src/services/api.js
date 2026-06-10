@@ -46,24 +46,19 @@ async function fetchEcomProducts(branchId, searchTerm, timeslot) {
   return res.json();
 }
 
-async function searchSilpoProducts(branchId, externalId, query) {
+const SILPO_IMG_BASE = 'https://images.silpo.ua/v2/products/300x300/webp/';
+
+async function searchSilpoProducts(branchId, _externalId, query) {
   const timeslot = makeTimeslot();
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
 
-  const [primaryRes, oldRes] = await Promise.allSettled([
-    fetchEcomProducts(branchId, query, timeslot),
-    fetch('/silpo-api/api/2.0/exec/EcomCatalogGlobal', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        method: 'GetSimpleCatalogItems',
-        data: { customFilter: query, filialId: String(externalId), skuPerPage: 48, pageNumber: 1 },
-      }),
-    }).then((r) => (r.ok ? r.json() : null)),
-  ]);
-
-  if (primaryRes.status === 'rejected') throw primaryRes.reason;
-  let items = primaryRes.value.items ?? [];
+  let data;
+  try {
+    data = await fetchEcomProducts(branchId, query, timeslot);
+  } catch (e) {
+    throw e;
+  }
+  let items = data.items ?? [];
 
   // Multi-word query with no results: search each word separately, intersect client-side
   if (items.length === 0 && words.length > 1) {
@@ -75,7 +70,6 @@ async function searchSilpoProducts(branchId, externalId, query) {
       .map((r) => new Map(r.value.map((i) => [i.id, i])));
 
     if (sets.length > 0) {
-      // Keep items that appear in ALL per-word result sets (strict AND intersection)
       const [first, ...rest] = sets;
       items = [...first.values()].filter((item) =>
         rest.every((s) => s.has(item.id))
@@ -83,18 +77,11 @@ async function searchSilpoProducts(branchId, externalId, query) {
     }
   }
 
-  const imageMap = {};
-  if (oldRes.status === 'fulfilled' && oldRes.value?.items) {
-    for (const item of oldRes.value.items) {
-      if (item.id && item.mainImage) imageMap[String(item.id)] = item.mainImage;
-    }
-  }
-
   return items.map((item) => ({
     ean: String(item.externalProductId ?? item.id),
     title: item.title,
     weight: item.displayRatio ?? item.ratio ?? null,
-    img: imageMap[String(item.externalProductId)] ?? null,
+    img: item.icon ? SILPO_IMG_BASE + item.icon : null,
     price: item.displayPrice ?? item.price,
     oldPrice: item.displayOldPrice ?? item.oldPrice ?? null,
   }));
@@ -241,6 +228,19 @@ async function getAtbStores() {
   });
 }
 
+function extractAtbWeight(title) {
+  let m;
+  m = title.match(/(\d+[,.]?\d*)\s*кг/i);
+  if (m) return m[0].trim();
+  m = title.match(/(\d+[,.]?\d*)\s*мл/i);
+  if (m) return m[0].trim();
+  m = title.match(/(\d+[,.]?\d*)\s*л(?![а-яіїєґёa-z])/i);
+  if (m) return m[0].trim();
+  m = title.match(/(\d+[,.]?\d*)\s*г(?![а-яіїєґёa-z])/i);
+  if (m) return m[0].trim();
+  return null;
+}
+
 async function searchAtbProducts(query) {
   const params = new URLSearchParams({
     id: '11280',
@@ -262,7 +262,7 @@ async function searchAtbProducts(query) {
     .map((item) => ({
       ean: item.id,
       title: item.name,
-      weight: null,
+      weight: extractAtbWeight(item.name ?? ''),
       img: item.picture ?? null,
       price: item.price,
       oldPrice: item.oldprice ?? null,

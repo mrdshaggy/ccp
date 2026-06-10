@@ -17,7 +17,10 @@ export default function ProductCard({ product, color, onClick, isCheapest }) {
             src={img}
             alt={product.title}
             className="product-img"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.parentElement.innerHTML = '<div class="product-img-placeholder">🛒</div>';
+            }}
           />
         ) : (
           <div className="product-img-placeholder">🛒</div>
