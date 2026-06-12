@@ -49,7 +49,7 @@ vite.config.js                     # 5 proxies: /silpo-api, /silpo-branches, /me
 
 | File | Role |
 |------|------|
-| `vite.config.js` | 5 dev proxies: `/silpo-api` → `api.catalog.ecom.silpo.ua`, `/silpo-branches` → `sf-ecom-api.silpo.ua`, `/metro-api` → `shop.metro.ua`, `/metro-www` → `www.metro.ua`, `/overpass-api` → `overpass-api.de`. Also `base: '/tsinoshchuk/'` for GitHub Pages. |
+| `vite.config.js` | 5 dev proxies: `/silpo-api` → `api.catalog.ecom.silpo.ua`, `/silpo-branches` → `sf-ecom-api.silpo.ua`, `/metro-api` → `shop.metro.ua`, `/metro-www` → `www.metro.ua`, `/overpass-api` → `overpass-api.de`. Also `base: '/'` for Vercel deployment. `vercel.json` rewrites handle CORS proxying for all 5 APIs. |
 | `src/services/api.js` | All fetch logic. `getStores(hub)` and `searchProducts(store, query, chainKey)` are the public exports. Silpo: ecom API for products, `images.silpo.ua` CDN for images (no proxy needed). ATB: `extractAtbWeight()` parses weight string from product title (кг→кг, г→г, мл→мл, л→л). |
 | `src/App.jsx` | State: `selectedShops[]`, `results{}`, `currentQuery`, `compareModal`, `cart{}`, `isCartOpen`. `addShop` auto-searches `currentQuery` for the new shop if a query is already active (prevents crash when adding a shop after a search). `addToCart(shopEntry, product)` deduplicates by EAN. `removeFromCart(shopId, ean)` auto-removes empty shop buckets. Cart icon in header shows badge count. |
 | `src/App.css` | Fixed-height viewport layout: `height: 100dvh; overflow: hidden` on `.app`. Flex column chain: `.app-main` → `.results-grid` (flex:1) → `.shop-column` → `.column-body` (overflow-y: auto). Per-column independent scroll. Print CSS: `body * { visibility: hidden }` + cart-drawer override for clean print/PDF output. |
