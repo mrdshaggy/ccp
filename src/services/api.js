@@ -93,7 +93,18 @@ async function searchSilpoProducts(branchId, _externalId, query) {
 const METRO_HEADERS = { 'x-sd-token': 'mq6k5cu8', Accept: 'application/json' };
 
 async function getMetroStores() {
-  const res = await fetch('/api/metro-stores');
+  const params = new URLSearchParams({
+    s: '{0F3B38A3-7330-4544-B95B-81FC80A6BB6F}',
+    sig: 'store-locator',
+    p: '30',
+    v: '{BECE07BD-19B3-4E41-9C8F-E9D9EC85574F}',
+    itemid: '{871024E5-B25D-4FFD-8AF1-29C3FDF1DD11}',
+    o: 'Distance,Ascending',
+    g: '49.0,31.0',
+  });
+  const res = await fetch(`/metro-www/sxa/search/results?${params}`, {
+    headers: { Accept: 'application/json' },
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
 
