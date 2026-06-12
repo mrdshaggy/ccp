@@ -21,9 +21,22 @@ export default function App() {
 
   const addShop = useCallback((chainKey, store) => {
     const id = `shop-${++shopCounter}`;
-    setSelectedShops((prev) => [...prev, { id, chainKey, store }]);
+    const newShop = { id, chainKey, store };
+    setSelectedShops((prev) => [...prev, newShop]);
     setIsModalOpen(false);
-  }, []);
+
+    if (currentQuery) {
+      setResults((prev) => ({ ...prev, [id]: { loading: true, products: [], error: null } }));
+      searchProducts(store, currentQuery, chainKey)
+        .then((products) => {
+          const sorted = [...products].sort((a, b) => Number(a.price) - Number(b.price));
+          setResults((prev) => ({ ...prev, [id]: { loading: false, products: sorted, error: null } }));
+        })
+        .catch((e) => {
+          setResults((prev) => ({ ...prev, [id]: { loading: false, products: [], error: e.message } }));
+        });
+    }
+  }, [currentQuery]);
 
   const removeShop = useCallback((shopId) => {
     setSelectedShops((prev) => prev.filter((s) => s.id !== shopId));
@@ -113,7 +126,7 @@ export default function App() {
       </header>
 
       <div className="demo-banner">
-        Сільпо, METRO та АТБ — реальні дані. Магазини АТБ: OpenStreetMap. Ціни АТБ: загальнонаціональні (безив'язки до конкретного магазину).
+        Сільпо, METRO та АТБ — реальні дані. Магазини АТБ: OpenStreetMap. Ціни АТБ: загальнонаціональні (без прив'язки до конкретного магазину).
       </div>
 
       <main className="app-main">
