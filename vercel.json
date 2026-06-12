@@ -1,5 +1,6 @@
 {
-  "installCommand": "npm install --include=dev",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
     { "source": "/silpo-api/:path*",      "destination": "https://api.catalog.ecom.silpo.ua/:path*" },
     { "source": "/silpo-branches/:path*", "destination": "https://sf-ecom-api.silpo.ua/:path*" },
